@@ -150,15 +150,13 @@ class AWS4Auth(AuthBase):
 
         req.headers['x-amz-content-sha256'] = content_hash.hexdigest()
 
-        now = datetime.utcnow()
-        if 'x-amz-date' not in req.headers:
-            timestamp = now.strftime('%Y%m%dT%H%M%SZ')
-            req.headers['x-amz-date'] = timestamp
+        if 'X-Amz-Date' not in req.headers:
+            req.headers['X-Amz-Date'] = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
         result = self.get_canonical_headers(req, self.include_hdrs)
         cano_headers, signed_headers = result
         cano_req = self.get_canonical_request(req, cano_headers,
                                               signed_headers)
-        self.signing_key.set_date(now.strftime('%Y%m%d'))
+        self.signing_key.set_date(req.headers['X-Amz-Date'].split('T')[0])
         sig_string = self.get_sig_string(req, cano_req, self.signing_key.scope)
         sig_string = sig_string.encode('utf-8')
         hsh = hmac.new(self.signing_key.key, sig_string, hashlib.sha256)
